@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 
 # Замените 'YOUR_BOT_API_TOKEN' на ваш токен от BotFather
-TOKEN = 'Yю7389514448:AAEAHWWJP6E6zisO0BqEoGrYD-DrRrWEEbs'
+TOKEN = '7389514448:AAEAHWWJP6E6zisO0BqEoGrYD-DrRrWEEbs'
 bot = telebot.TeleBot(TOKEN)
 
 # Создание кнопок, которые будут под клавиатурой
