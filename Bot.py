@@ -44,4 +44,4 @@ def handle_query(call):
         bot.send_message(call.message.chat.id, "Оплатить можно на карту РОССИИ: 2200701089399395 Амир. После оплаты свяжитесь с автором данного бота @doksformoney для дальнейших переговоров")
 
 # Запуск бота
-bot.polling(none_stop=True)дл
+bot.polling(none_stop=True)
