@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 
 # Вставьте ваш токен
-TOKEN = "7389514448:AAEAHWWJP6E6zisO0BqEoGrYD-DrRrWEEbs"
+TOKEN = "6699047318:AAGRIzgJy2LuPJWW59O0QsiuDCfZ20xxHws"
 bot = telebot.TeleBot(TOKEN)
 
 # Функция для обработки команды /start
