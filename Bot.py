@@ -1,6 +1,6 @@
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils import executor
+from telebot import Bot, Dispatcher, types
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from telebot.utils import executor
 
 # Вставьте ваш токен
 TOKEN = "7389514448:AAEAHWWJP6E6zisO0BqEoGrYD-DrRrWEEbs"
