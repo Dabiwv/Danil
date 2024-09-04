@@ -19,9 +19,9 @@ def send_welcome(message):
     
     bot.send_message(message.chat.id, "Привет! Выберите нужную опцию ниже:", reply_markup=markup)
 
-# Функция для обработки нажатий на кнопки
+# Функция для обработки текстовых сообщений
 @bot.message_handler(func=lambda message: True)
-def handle_text(message):
+def handle_message(message):
     if message.text == '📩 Реквизиты Kaspi Gold':
         bot.send_message(message.chat.id, "📩 Отправьте деньги по реквизитам на Kaspi Gold 🔥:\n☎️ Номер: 4400 4302 6934 6638\n👨‍💻 Имя - Данил Г.\n💬 Комментарий: НЕ ПИСАТЬ!!!")
     elif message.text == '📩 Реквизиты Halyk Bank':
