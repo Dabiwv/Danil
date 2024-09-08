@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackContext, filters
 from datetime import datetime, timedelta
 import logging
@@ -15,15 +15,17 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 subscriptions = {}
 user_data = {}
 
+def get_keyboard():
+    return ReplyKeyboardMarkup([
+        [KeyboardButton("📧 Email снос")],
+        [KeyboardButton("💬 Поддержка")]
+    ], resize_keyboard=True)
+
 async def start(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
-        keyboard = [
-            ["📧 Email снос"],
-            ["💬 Поддержка"]
-        ]
-        reply_markup = context.bot.build_reply_markup(keyboard)
-        await update.message.reply_text("Привет! Выберите действие:", reply_markup=reply_markup)
+        keyboard = get_keyboard()
+        await update.message.reply_text("Привет! Выберите действие:", reply_markup=keyboard)
     else:
         await update.message.reply_text("Добро пожаловать! Ожидайте активации подписки от администратора.")
 
@@ -46,7 +48,17 @@ async def process_activate(update: Update, context: CallbackContext):
             days = int(args[1])
             expiry_date = datetime.now() + timedelta(days=days)
             subscriptions[target_user_id] = expiry_date
-            await context.bot.send_message(target_user_id, f"Поздравляем с приобретением подписки на {days} дней. Ваша подписка действует до {expiry_date.strftime('%d.%m.%Y %H:%M')}")
+
+            # Отправка сообщения пользователю
+            await context.bot.send_message(target_user_id, 
+                f"Поздравляем с приобретением подписки на {days} дней. Ваша подписка действует до {expiry_date.strftime('%d.%m.%Y %H:%M')}.")
+            
+            # Отправка сообщения пользователю и установка кнопок
+            keyboard = get_keyboard()
+            await context.bot.send_message(target_user_id, 
+                "Добро пожаловать! Ваша подписка активирована. Выберите действие:", reply_markup=keyboard)
+
+            # Отправка сообщения администратору
             await update.message.reply_text(f"Подписка для пользователя {target_user_id} активирована на {days} дней.")
         except Exception as e:
             await update.message.reply_text(f"Произошла ошибка: {e}")
@@ -59,46 +71,23 @@ async def email_snos(update: Update, context: CallbackContext):
         await update.message.reply_text("Введите тему жалобы:")
         user_data[user_id] = {'stage': 'subject'}
     else:
-        await update.message.reply_text("Ваша подписка истекла или не активирована. Пожалуйста, активируйте её снова.")
+        await update.message.reply_text("Ваша подписка истекла или не активирована. Пожалуйста, свяжитесь с администратором для получения доступа.")
 
 async def support(update: Update, context: CallbackContext):
-    await update.message.reply_text("Добавьте свой текст. Если у вас есть вопросы, пишите в этот чат @AReCToVaN_ZA_NACIONALIZM")
-
-async def handle_text(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
-    if user_id in user_data:
-        stage = user_data[user_id].get('stage')
-        if stage == 'subject':
-            user_data[user_id]['subject'] = update.message.text
-            await update.message.reply_text("Теперь введите текст жалобы:")
-            user_data[user_id]['stage'] = 'body'
-        elif stage == 'body':
-            user_data[user_id]['body'] = update.message.text
-            await update.message.reply_text("Сколько запросов отправить?")
-            user_data[user_id]['stage'] = 'num_requests'
-        elif stage == 'num_requests':
-            try:
-                num_requests = int(update.message.text)
-                # Имитация отправки жалоб
-                for _ in range(num_requests):
-                    await update.message.reply_text("Жалобы успешно отправлены!")
-                del user_data[user_id]  # Очистка данных пользователя
-            except ValueError:
-                await update.message.reply_text("Пожалуйста, введите корректное количество запросов.")
+    if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
+        await update.message.reply_text("Добавьте свой текст. Если у вас есть вопросы, пишите сюда: @AReCToVaN_ZA_NACIONALIZM")
     else:
-        await update.message.reply_text("Сначала активируйте подписку.")
+        await update.message.reply_text("Ваша подписка истекла или не активирована. Пожалуйста, свяжитесь с администратором для получения доступа.")
 
-def main():
+if __name__ == '__main__':
     application = Application.builder().token(TOKEN).build()
 
-    # Обработчики команд
+    # Команды
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("activate", process_activate))
-    
-    # Обработчики сообщений
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    
-    application.run_polling()
+    application.add_handler(CommandHandler("activate", activate))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, process_activate))
+    application.add_handler(MessageHandler(filters.TEXT & filters.Regex("📧 Email снос"), email_snos))
+    application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💬 Поддержка"), support))
 
-if __name__ == "__main__":
-    main()
+    application.run_polling()
