@@ -13,6 +13,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 # Переменные для хранения данных пользователей
 subscriptions = {}
+user_data = {}
 
 async def start(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
@@ -46,6 +47,7 @@ async def process_activate(update: Update, context: CallbackContext):
             expiry_date = datetime.now() + timedelta(days=days)
             subscriptions[target_user_id] = expiry_date
             await context.bot.send_message(target_user_id, f"Поздравляем с приобретением подписки на {days} дней. Ваша подписка действует до {expiry_date.strftime('%d.%m.%Y %H:%M')}")
+            await update.message.reply_text(f"Подписка для пользователя {target_user_id} активирована на {days} дней.")
         except Exception as e:
             await update.message.reply_text(f"Произошла ошибка: {e}")
     else:
@@ -77,7 +79,6 @@ async def handle_text(update: Update, context: CallbackContext):
         elif stage == 'num_requests':
             try:
                 num_requests = int(update.message.text)
-                await update.message.reply_text(f"Отправляю {num_requests} запросов...")
                 # Имитация отправки жалоб
                 for _ in range(num_requests):
                     await update.message.reply_text("Жалобы успешно отправлены!")
@@ -90,11 +91,13 @@ async def handle_text(update: Update, context: CallbackContext):
 def main():
     application = Application.builder().token(TOKEN).build()
 
+    # Обработчики команд
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("activate", activate))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     application.add_handler(CommandHandler("activate", process_activate))
-
+    
+    # Обработчики сообщений
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+    
     application.run_polling()
 
 if __name__ == "__main__":
