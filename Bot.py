@@ -6,7 +6,7 @@ import logging
 # Вставьте ваш токен
 TOKEN = "6702141092:AAFfXtlkW4U8fPT3VnBJMZToHP4GKjpwc2c"
 # Ваши ID администраторов
-ADMIN_IDS = {1694921116, 6858042867}  # Ваш ID и ID вашего друга
+ADMIN_IDS = {1694921116,7385089105}  # Ваш ID и ID вашего друга
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
