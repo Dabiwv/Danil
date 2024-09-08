@@ -23,6 +23,8 @@ def get_keyboard():
 
 async def start(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
+    logging.info(f"User {user_id} started the bot.")
+    
     if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
         keyboard = get_keyboard()
         await update.message.reply_text("Привет! Выберите действие:", reply_markup=keyboard)
@@ -64,6 +66,8 @@ async def activate(update: Update, context: CallbackContext):
 
 async def email_snos(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
+    logging.info(f"User {user_id} initiated email snos.")
+    
     if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
         user_data[user_id] = {'stage': 'subject'}
         await update.message.reply_text("Введите тему жалобы:")
