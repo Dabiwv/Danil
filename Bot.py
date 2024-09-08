@@ -32,36 +32,33 @@ async def start(update: Update, context: CallbackContext):
 async def activate(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     if user_id == ADMIN_ID:
-        await update.message.reply_text("Отправьте ID пользователя и количество дней подписки в формате: /activate <user_id> <days>")
-    else:
-        await update.message.reply_text("У вас нет прав для выполнения этой команды.")
+        if len(context.args) == 2:
+            try:
+                target_user_id = int(context.args[0])
+                days = int(context.args[1])
+                expiry_date = datetime.now() + timedelta(days=days)
+                subscriptions[target_user_id] = expiry_date
 
-async def process_activate(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    if user_id == ADMIN_ID:
-        try:
-            args = context.args
-            if len(args) != 2:
-                raise ValueError("Неверное количество аргументов.")
+                # Отправка сообщения пользователю
+                await context.bot.send_message(
+                    target_user_id,
+                    f"Поздравляем с приобретением подписки на {days} дней. Ваша подписка действует до {expiry_date.strftime('%d.%m.%Y %H:%M')}.",
+                )
                 
-            target_user_id = int(args[0])
-            days = int(args[1])
-            expiry_date = datetime.now() + timedelta(days=days)
-            subscriptions[target_user_id] = expiry_date
+                # Отправка сообщения пользователю и установка кнопок
+                keyboard = get_keyboard()
+                await context.bot.send_message(
+                    target_user_id,
+                    "Добро пожаловать! Ваша подписка активирована. Выберите действие:",
+                    reply_markup=keyboard
+                )
 
-            # Отправка сообщения пользователю
-            await context.bot.send_message(target_user_id, 
-                f"Поздравляем с приобретением подписки на {days} дней. Ваша подписка действует до {expiry_date.strftime('%d.%m.%Y %H:%M')}.")
-            
-            # Отправка сообщения пользователю и установка кнопок
-            keyboard = get_keyboard()
-            await context.bot.send_message(target_user_id, 
-                "Добро пожаловать! Ваша подписка активирована. Выберите действие:", reply_markup=keyboard)
-
-            # Отправка сообщения администратору
-            await update.message.reply_text(f"Подписка для пользователя {target_user_id} активирована на {days} дней.")
-        except Exception as e:
-            await update.message.reply_text(f"Произошла ошибка: {e}")
+                # Отправка сообщения администратору
+                await update.message.reply_text(f"Подписка для пользователя {target_user_id} активирована на {days} дней.")
+            except ValueError:
+                await update.message.reply_text("Ошибка в формате. Убедитесь, что вы вводите ID пользователя и количество дней.")
+        else:
+            await update.message.reply_text("Используйте правильный формат: /activate <user_id> <days>")
     else:
         await update.message.reply_text("У вас нет прав для выполнения этой команды.")
 
@@ -86,7 +83,6 @@ if __name__ == '__main__':
     # Команды
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("activate", activate))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, process_activate))
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("📧 Email снос"), email_snos))
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💬 Поддержка"), support))
 
