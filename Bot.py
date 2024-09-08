@@ -1,59 +1,59 @@
 import telebot
-from telebot import types
+from datetime import datetime, timedelta
 
-# Вставьте ваш токен
 TOKEN = "6702141092:AAFfXtlkW4U8fPT3VnBJMZToHP4GKjpwc2c"
+ADMIN_ID = 1694921116  # Ваш Telegram ID
+
 bot = telebot.TeleBot(TOKEN)
 
-# Кнопки на клавиатуре
-keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-button_email = types.KeyboardButton('📧 Email снос')
-button_support = types.KeyboardButton('💬 Поддержка')
-keyboard.add(button_email, button_support)
+# Словарь для хранения подписок пользователей
+user_subscriptions = {}
 
-# Переменная для хранения данных пользователей
-user_data = {}
-
-# Команда /start
+# Команда /start для всех пользователей
 @bot.message_handler(commands=['start'])
-def start(message):
-    bot.send_message(message.chat.id, "Привет! Выберите действие:", reply_markup=keyboard)
+def send_welcome(message):
+    bot.reply_to(message, "Добро пожаловать! Дождитесь активации подписки от администратора.")
 
-# Обработка нажатия кнопки '📧 Email снос'
-@bot.message_handler(func=lambda message: message.text == '📧 Email снос')
-def email_snos(message):
-    user_id = message.from_user.id
-    user_data[user_id] = {}  # Инициализируем данные пользователя
-    bot.send_message(message.chat.id, "Введите тему жалобы:")
-
-# Обработка текста для жалобы
-@bot.message_handler(func=lambda message: message.text not in ['📧 Email снос', '💬 Поддержка'])
-def process_complaint(message):
-    user_id = message.from_user.id
-
-    if 'subject' not in user_data[user_id]:
-        user_data[user_id]['subject'] = message.text
-        bot.send_message(message.chat.id, "Теперь введите текст жалобы:")
-    elif 'body' not in user_data[user_id]:
-        user_data[user_id]['body'] = message.text
-        bot.send_message(message.chat.id, "Сколько запросов отправить?")
-    elif 'num_requests' not in user_data[user_id]:
+# Команда активации подписки, доступна только администратору
+@bot.message_handler(commands=['activate'])
+def activate_subscription(message):
+    if message.from_user.id == ADMIN_ID:
         try:
-            num_requests = int(message.text)
-            user_data[user_id]['num_requests'] = num_requests
-            bot.send_message(message.chat.id, f"Отправляю {num_requests} запросов...")
+            # Команда должна быть в формате: /activate <user_id> <days>
+            command_parts = message.text.split()
+            user_id = int(command_parts[1])
+            days = int(command_parts[2])
             
-            # Имитация отправки жалоб
-            for _ in range(num_requests):
-                for _ in range(7):  # Сообщение выводится 7 раз
-                    bot.send_message(message.chat.id, "Жалобы успешно отправлены!")
-        except ValueError:
-            bot.send_message(message.chat.id, "Пожалуйста, введите корректное количество запросов.")
+            # Рассчитываем дату окончания подписки
+            expiration_date = datetime.now() + timedelta(days=days)
+            user_subscriptions[user_id] = expiration_date
 
-# Обработка нажатия кнопки '💬 Поддержка'
-@bot.message_handler(func=lambda message: message.text == '💬 Поддержка')
-def support(message):
-    bot.send_message(message.chat.id, "Напишите ваше обращение, и админ вам ответит.")
+            # Отправляем сообщение пользователю о начале подписки
+            bot.send_message(user_id, f"Поздравляем с приобретением подписки на {days} дней.\n"
+                                      f"Ваша подписка действует до {expiration_date.strftime('%d.%m.%Y %H:%M')}")
+
+            # Подтверждаем активацию администратору
+            bot.reply_to(message, f"Подписка на {days} дней успешно активирована для пользователя {user_id}.")
+        except (IndexError, ValueError):
+            bot.reply_to(message, "Неверный формат команды. Используйте: /activate <user_id> <days>")
+        except Exception as e:
+            bot.reply_to(message, f"Произошла ошибка: {e}")
+    else:
+        bot.reply_to(message, "У вас нет прав на использование этой команды.")
+
+# Команда проверки подписки для всех пользователей
+@bot.message_handler(commands=['check'])
+def check_subscription(message):
+    user_id = message.from_user.id
+    if user_id in user_subscriptions:
+        expiration_date = user_subscriptions[user_id]
+        if datetime.now() < expiration_date:
+            bot.reply_to(message, f"Ваша подписка действует до {expiration_date.strftime('%d.%m.%Y %H:%M')}")
+        else:
+            bot.reply_to(message, "Срок вашей подписки истек.")
+    else:
+        bot.reply_to(message, "У вас нет активной подписки.")
 
 # Запуск бота
-bot.polling(none_stop=True)
+if __name__ == "__main__":
+    bot.polling(none_stop=True)
