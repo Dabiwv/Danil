@@ -5,8 +5,8 @@ import logging
 
 # Вставьте ваш токен
 TOKEN = "6702141092:AAFfXtlkW4U8fPT3VnBJMZToHP4GKjpwc2c"
-# Ваш ID
-ADMIN_ID = 1694921116
+# Ваши ID администраторов
+ADMIN_IDS = {1694921116, 6858042867}  # Ваш ID и ID вашего друга
 
 # Настройка логирования
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -31,7 +31,7 @@ async def start(update: Update, context: CallbackContext):
 
 async def activate(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
-    if user_id == ADMIN_ID:
+    if user_id in ADMIN_IDS:
         if len(context.args) == 2:
             try:
                 target_user_id = int(context.args[0])
