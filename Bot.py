@@ -65,10 +65,37 @@ async def activate(update: Update, context: CallbackContext):
 async def email_snos(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
-        await update.message.reply_text("Введите тему жалобы:")
         user_data[user_id] = {'stage': 'subject'}
+        await update.message.reply_text("Введите тему жалобы:")
     else:
         await update.message.reply_text("Ваша подписка истекла или не активирована. Пожалуйста, свяжитесь с администратором для получения доступа.")
+
+async def handle_text(update: Update, context: CallbackContext):
+    user_id = update.effective_user.id
+
+    if user_id in user_data:
+        if user_data[user_id]['stage'] == 'subject':
+            user_data[user_id]['subject'] = update.message.text
+            user_data[user_id]['stage'] = 'body'
+            await update.message.reply_text("Теперь введите текст жалобы:")
+        elif user_data[user_id]['stage'] == 'body':
+            user_data[user_id]['body'] = update.message.text
+            user_data[user_id]['stage'] = 'num_requests'
+            await update.message.reply_text("Сколько запросов отправить?")
+        elif user_data[user_id]['stage'] == 'num_requests':
+            try:
+                num_requests = int(update.message.text)
+                user_data[user_id]['num_requests'] = num_requests
+
+                # Отправка имитации
+                for _ in range(num_requests):
+                    await update.message.reply_text("Жалобы успешно отправлены!")
+
+                # Очистка данных пользователя
+                del user_data[user_id]
+
+            except ValueError:
+                await update.message.reply_text("Пожалуйста, введите корректное количество запросов.")
 
 async def support(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
@@ -85,5 +112,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler("activate", activate))
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("📧 Email снос"), email_snos))
     application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💬 Поддержка"), support))
+    application.add_handler(MessageHandler(filters.TEXT, handle_text))
 
     application.run_polling()
