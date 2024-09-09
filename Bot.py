@@ -1,121 +1,82 @@
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackContext, filters
-from datetime import datetime, timedelta
-import logging
+import time
+import random
+from telebot import TeleBot, types
 
-# Вставьте ваш токен
-TOKEN = "6702141092:AAFfXtlkW4U8fPT3VnBJMZToHP4GKjpwc2c"
-# Ваши ID администраторов
-ADMIN_IDS = {1694921116,7385089105}  # Ваш ID и ID вашего друга
+# Токен бота и айди админов
+TOKEN = '6702141092:AAFfXtlkW4U8fPT3VnBJMZToHP4GKjpwc2c'
+ADMIN_IDS = [1694921116, 6858042867]
+bot = TeleBot(TOKEN)
 
-# Настройка логирования
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+# Список случайных фактов о хакерстве
+random_facts = [
+    "Первый компьютерный вирус был создан в 1986 году.",
+    "White Hat хакеры помогают компаниям находить уязвимости.",
+    "SQL-инъекции — один из самых распространенных методов взлома.",
+    "Первый DDoS-атакующий использовал ботнет из 500 устройств.",
+    "Wi-Fi сети без пароля могут быть взломаны за несколько минут.",
+    "Phishing — популярный метод кражи личных данных.",
+    "С помощью keylogger'ов хакеры крадут пароли с клавиатур.",
+    "Tor позволяет анонимно посещать сайты в даркнете.",
+    "Zero-day уязвимости могут быть проданы за миллионы.",
+    "Deepfake может быть использован для обмана в интернете."
+]
 
-# Переменные для хранения данных пользователей
-subscriptions = {}
-user_data = {}
+# Ограничение по времени для антифлуда
+last_message_time = {}
 
-def get_keyboard():
-    return ReplyKeyboardMarkup([
-        [KeyboardButton("📧 Email снос")],
-        [KeyboardButton("💬 Поддержка")]
-    ], resize_keyboard=True)
+# Функция антифлуда
+def anti_flood(user_id):
+    current_time = time.time()
+    if user_id in last_message_time:
+        if current_time - last_message_time[user_id] < 4:
+            return False
+    last_message_time[user_id] = current_time
+    return True
 
-async def start(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    logging.info(f"User {user_id} started the bot.")
-    
-    if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
-        keyboard = get_keyboard()
-        await update.message.reply_text("Привет! Выберите действие:", reply_markup=keyboard)
-    else:
-        await update.message.reply_text("Добро пожаловать! Ожидайте активации подписки от администратора.")
-
-async def activate(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    if user_id in ADMIN_IDS:
-        if len(context.args) == 2:
-            try:
-                target_user_id = int(context.args[0])
-                days = int(context.args[1])
-                expiry_date = datetime.now() + timedelta(days=days)
-                subscriptions[target_user_id] = expiry_date
-
-                # Отправка сообщения пользователю
-                await context.bot.send_message(
-                    target_user_id,
-                    f"Поздравляем с приобретением подписки на {days} дней. Ваша подписка действует до {expiry_date.strftime('%d.%m.%Y %H:%M')}.",
-                )
-                
-                # Отправка сообщения пользователю и установка кнопок
-                keyboard = get_keyboard()
-                await context.bot.send_message(
-                    target_user_id,
-                    "Добро пожаловать! Ваша подписка активирована. Выберите действие:",
-                    reply_markup=keyboard
-                )
-
-                # Отправка сообщения администратору
-                await update.message.reply_text(f"Подписка для пользователя {target_user_id} активирована на {days} дней.")
-            except ValueError:
-                await update.message.reply_text("Ошибка в формате. Убедитесь, что вы вводите ID пользователя и количество дней.")
+# Команда старта
+@bot.message_handler(commands=['start'])
+def start(message):
+    if anti_flood(message.from_user.id):
+        if message.from_user.id in ADMIN_IDS:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.add(types.KeyboardButton("🎲 Случайный факт"), types.KeyboardButton("📧 Email снос"))
+            bot.send_message(message.chat.id, "Добро пожаловать, админ!", reply_markup=markup)
         else:
-            await update.message.reply_text("Используйте правильный формат: /activate <user_id> <days>")
+            bot.send_message(message.chat.id, "Добро пожаловать! Ожидайте активации подписки от администратора.")
     else:
-        await update.message.reply_text("У вас нет прав для выполнения этой команды.")
+        bot.send_message(message.chat.id, "Подождите несколько секунд перед следующим сообщением.")
 
-async def email_snos(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    logging.info(f"User {user_id} initiated email snos.")
-    
-    if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
-        user_data[user_id] = {'stage': 'subject'}
-        await update.message.reply_text("Введите тему жалобы:")
+# Команда активации подписки
+@bot.message_handler(commands=['activate'])
+def activate(message):
+    if message.from_user.id in ADMIN_IDS:
+        try:
+            _, user_id, days = message.text.split()
+            user_id = int(user_id)
+            days = int(days)
+            bot.send_message(user_id, f"Поздравляем с приобретением подписки на {days} дней!")
+            bot.send_message(user_id, "Ваша подписка активирована.")
+        except ValueError:
+            bot.send_message(message.chat.id, "Отправьте ID пользователя и количество дней подписки в формате: /activate <user_id> <days>")
     else:
-        await update.message.reply_text("Ваша подписка истекла или не активирована. Пожалуйста, свяжитесь с администратором для получения доступа.")
+        bot.send_message(message.chat.id, "У вас нет прав для выполнения этой команды.")
 
-async def handle_text(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-
-    if user_id in user_data:
-        if user_data[user_id]['stage'] == 'subject':
-            user_data[user_id]['subject'] = update.message.text
-            user_data[user_id]['stage'] = 'body'
-            await update.message.reply_text("Теперь введите текст жалобы:")
-        elif user_data[user_id]['stage'] == 'body':
-            user_data[user_id]['body'] = update.message.text
-            user_data[user_id]['stage'] = 'num_requests'
-            await update.message.reply_text("Сколько запросов отправить?")
-        elif user_data[user_id]['stage'] == 'num_requests':
-            try:
-                num_requests = int(update.message.text)
-                user_data[user_id]['num_requests'] = num_requests
-
-                # Отправка имитации
-                for _ in range(num_requests):
-                    await update.message.reply_text("Жалобы успешно отправлены!")
-
-                # Очистка данных пользователя
-                del user_data[user_id]
-
-            except ValueError:
-                await update.message.reply_text("Пожалуйста, введите корректное количество запросов.")
-
-async def support(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    if user_id in subscriptions and datetime.now() <= subscriptions[user_id]:
-        await update.message.reply_text("Добавьте свой текст. Если у вас есть вопросы, пишите сюда: @AReCToVaN_ZA_NACIONALIZM")
+# Обработчик кнопки "🎲 Случайный факт"
+@bot.message_handler(func=lambda message: message.text == "🎲 Случайный факт")
+def random_fact(message):
+    if anti_flood(message.from_user.id):
+        fact = random.choice(random_facts)
+        bot.send_message(message.chat.id, fact)
     else:
-        await update.message.reply_text("Ваша подписка истекла или не активирована. Пожалуйста, свяжитесь с администратором для получения доступа.")
+        bot.send_message(message.chat.id, "Подождите несколько секунд перед следующим сообщением.")
 
-if __name__ == '__main__':
-    application = Application.builder().token(TOKEN).build()
+# Обработчик кнопки "📧 Email снос"
+@bot.message_handler(func=lambda message: message.text == "📧 Email снос")
+def email_snos(message):
+    if anti_flood(message.from_user.id):
+        bot.send_message(message.chat.id, "Введите тему жалобы:")
+    else:
+        bot.send_message(message.chat.id, "Подождите несколько секунд перед следующим сообщением.")
 
-    # Команды
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("activate", activate))
-    application.add_handler(MessageHandler(filters.TEXT & filters.Regex("📧 Email снос"), email_snos))
-    application.add_handler(MessageHandler(filters.TEXT & filters.Regex("💬 Поддержка"), support))
-    application.add_handler(MessageHandler(filters.TEXT, handle_text))
-
-    application.run_polling()
+# Запуск бота
+bot.polling(none_stop=True)
