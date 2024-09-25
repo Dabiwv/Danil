@@ -1,6 +1,6 @@
 import time
 from telethon import TelegramClient
-from telethon.errors import ChatAdminRequiredError
+from telethon.errors import ChatAdminRequiredError, UserIdInvalidError
 
 # Вставьте свои данные здесь
 api_id = 23169896  # Ваш API ID
@@ -19,6 +19,8 @@ async def send_message(chat):
         print(f"Сообщение отправлено в беседу: {chat.title} ({chat.id})")
     except ChatAdminRequiredError:
         print(f"Нет прав администратора для отправки сообщения в беседу: {chat.title} ({chat.id}). Пропуск...")
+    except UserIdInvalidError:
+        print(f"Недопустимый ID пользователя для чата: {chat.title} ({chat.id}). Пропуск...")
     except Exception as e:
         print(f"Ошибка при отправке сообщения в беседу: {chat.title} ({chat.id}): {e}")
 
@@ -28,15 +30,21 @@ async def main():
     # Получаем список всех чатов
     dialogs = await client.get_dialogs()
 
-    for dialog in dialogs:
-        # Проверяем, является ли диалог беседой или общим чатом
-        if dialog.is_group or dialog.is_channel:  # Проверяем на группы или каналы
-            await send_message(dialog.entity)
+    # Список задач для отправки сообщений
+    tasks = []
 
-            # Ожидание 4 минуты между отправками
-            wait_time = 240  # 240 секунд = 4 минуты
-            print(f"Ожидание {wait_time // 60} минут перед следующей отправкой...")
-            time.sleep(wait_time)
+    for dialog in dialogs:
+        # Проверяем, является ли диалог беседой или общим чатом и не является ли каналом
+        if dialog.is_group and not dialog.is_channel:
+            tasks.append(send_message(dialog.entity))
+
+    # Отправляем все сообщения одновременно
+    await asyncio.gather(*tasks)
+
+    # Ожидание 45 секунд между отправками
+    wait_time = 45  # 45 секунд
+    print(f"Ожидание {wait_time} секунд перед следующей отправкой...")
+    time.sleep(wait_time)
 
 # Запуск основного метода
 with client:
