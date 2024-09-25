@@ -43,13 +43,4 @@ async def main():
 
 # Запускаем асинхронную функцию в основном блоке программы
 with user_client:
-    user_client.loop.run_until_complete(main())        await user_client.sign_in(phone_number, phone_code)
-    
-    print("Авторизация пользователя прошла успешно!")
-    
-    # Ожидаем события от бота
-    await bot_client.run_until_disconnected()
-
-# Запускаем асинхронную функцию в основном блоке программы
-with user_client:
     user_client.loop.run_until_complete(main())
