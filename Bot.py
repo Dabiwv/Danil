@@ -12,18 +12,18 @@ client = TelegramClient('report_bot', api_id, api_hash)
 async def main():
     await client.start()
 
-    user_id = input("Введите ID пользователя, на которого хотите отправить жалобу: ")
+    user_input = input("Введите ID или username пользователя, на которого хотите отправить жалобу: ")
 
     while True:
         try:
             # Отправляем жалобу на пользователя
             await client(functions.messages.ReportRequest(
-                peer=await client.get_input_entity(user_id),
+                peer=await client.get_input_entity(user_input),  # Теперь user_input может быть ID или username
                 id=[],  # Обычно можно оставить пустым для жалобы на весь чат
                 reason=types.InputReportReasonSpam(),  # Тип жалобы (в данном случае - спам)
                 message='Спам'  # Причина жалобы
             ))
-            print(f"Жалоба на пользователя {user_id} отправлена!")
+            print(f"Жалоба на пользователя {user_input} отправлена!")
             
             # Ожидание перед отправкой следующей жалобы
             await asyncio.sleep(5)  # Отправка жалобы каждые 5 секунд
