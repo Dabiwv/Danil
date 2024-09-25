@@ -1,4 +1,5 @@
 import time
+import asyncio
 from telethon import TelegramClient
 from telethon.errors import ChatAdminRequiredError, UserIdInvalidError
 
@@ -44,7 +45,7 @@ async def main():
     # Ожидание 45 секунд между отправками
     wait_time = 45  # 45 секунд
     print(f"Ожидание {wait_time} секунд перед следующей отправкой...")
-    time.sleep(wait_time)
+    await asyncio.sleep(wait_time)
 
 # Запуск основного метода
 with client:
