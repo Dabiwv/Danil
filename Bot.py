@@ -10,64 +10,50 @@ phone_number = '+7 776 6349341'
 # Создаем клиент Telethon
 client = TelegramClient('auto_responder', api_id, api_hash)
 
-# Параметры антиспама
-MESSAGE_LIMIT = 5  # Максимум сообщений за время ниже
-TIME_WINDOW = 60  # Интервал в секундах (например, 60 секунд)
-BLOCK_TIME = 1800  # Время блокировки (30 минут = 1800 секунд)
+# Параметры автоответчика
+auto_reply_message = "Вас приветствует Кристалл, за меня отвечает автоответчик. Если не отвечаю, значит занят/сплю/нахожусь в личной зоне. Просьба не спамить!"
 
-# Храним информацию о пользователях
-user_messages = {}  # Сообщения пользователя за последний промежуток времени
-blocked_users = {}  # Время разблокировки пользователя
+# Переменные для контроля режима
+chat_mode = False
+group_mode = False
+last_group_reply_time = 0  # Время последнего сообщения в группах
 
-# Функция для проверки на блокировку пользователя
-def is_blocked(user_id):
-    return user_id in blocked_users and time.time() < blocked_users[user_id]
+# Обработчик команды /chat (личные чаты)
+@client.on(events.NewMessage(pattern='/chat'))
+async def activate_chat_mode(event):
+    global chat_mode, group_mode
+    chat_mode = True
+    group_mode = False
+    await event.reply("Автоответчик для личных чатов активирован!")
 
-# Функция для добавления сообщения от пользователя
-def add_message(user_id):
-    now = time.time()
+# Обработчик команды /group (группы)
+@client.on(events.NewMessage(pattern='/group'))
+async def activate_group_mode(event):
+    global group_mode, chat_mode
+    group_mode = True
+    chat_mode = False
+    await event.reply("Автоответчик для групп активирован! Интервал между сообщениями: 20 секунд.")
 
-    if user_id not in user_messages:
-        user_messages[user_id] = []
-
-    # Убираем старые сообщения
-    user_messages[user_id] = [msg_time for msg_time in user_messages[user_id] if now - msg_time < TIME_WINDOW]
+# Обработчик входящих сообщений
+@client.on(events.NewMessage)
+async def auto_responder(event):
+    global chat_mode, group_mode, last_group_reply_time
     
-    # Добавляем текущее сообщение
-    user_messages[user_id].append(now)
+    # Игнорировать ботов и свои сообщения
+    if event.is_private and chat_mode and not event.is_bot and event.sender_id != (await client.get_me()).id:
+        await event.reply(auto_reply_message)
+    
+    # Отвечать только в группах при активном group_mode
+    elif event.is_group and group_mode:
+        current_time = time.time()
+        if current_time - last_group_reply_time >= 20:  # Проверка интервала 20 секунд
+            await event.reply(auto_reply_message)
+            last_group_reply_time = current_time
 
-    # Проверяем, не превысил ли пользователь лимит сообщений
-    if len(user_messages[user_id]) > MESSAGE_LIMIT:
-        blocked_users[user_id] = now + BLOCK_TIME  # Блокируем пользователя на BLOCK_TIME секунд
-        return True
-    return False
-
-# Обработчик новых сообщений
-@client.on(events.NewMessage(incoming=True))
-async def handler(event):
-    sender = await event.get_sender()
-    sender_id = sender.id
-
-    # Если пользователь заблокирован, игнорируем его сообщения
-    if is_blocked(sender_id):
-        print(f"Пользователь {sender_id} заблокирован.")
-        return
-
-    # Добавляем сообщение от пользователя и проверяем на спам
-    if add_message(sender_id):
-        await event.respond("Вы отправляете слишком много сообщений. Вас заблокировали на 30 минут.")
-        print(f"Пользователь {sender_id} заблокирован за спам.")
-        return
-
-    # Автоответчик
-    await event.respond("Вас приветствует Кристалл, за меня отвечает автоответчик. Если не отвечаю, значит занят/сплю/нахожусь в личной зоне. Просьба не спамить!")
-    print(f"Ответ пользователю {sender_id} отправлен.")
-
-# Запуск клиента
 async def main():
-    await client.start(phone_number)
+    await client.start(phone=phone_number)
     print("Бот запущен...")
     await client.run_until_disconnected()
 
-# Запуск асинхронного кода
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
