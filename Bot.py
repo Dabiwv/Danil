@@ -29,28 +29,19 @@ async def report(event):
     await event.respond(f"Жалоба на пользователя {user_id} отправлена.")
 
 async def main():
+    # Запускаем авторизацию пользователя
     await user_client.start(phone_number)
     
-    # Если требуется код подтверждения
+    # Проверяем авторизацию и запрашиваем код подтверждения, если нужно
     if not await user_client.is_user_authorized():
         phone_code = input('Введите код подтверждения, который пришел на ваш телефон: ')
         await user_client.sign_in(phone_number, phone_code)
     
     print("Авторизация пользователя прошла успешно!")
     
+    # Ожидаем события от бота
     await bot_client.run_until_disconnected()
 
+# Запускаем асинхронную функцию в основном блоке программы
 with user_client:
-    user_client.loop.run_until_complete(main())        await user_client.sign_in(phone_number, phone_code)
-    
-    print("Авторизация пользователя прошла успешно!")
-    
-    await bot_client.run_until_disconnected()
-
-with user_client:
-    user_client.loop.run_until_complete(main())        user_id = input("Введите ID пользователя для отправки жалобы: ")
-        await send_report(user_id)
-        await asyncio.sleep(5)  # Интервал между отправкой жалоб (5 секунд)
-
-with client:
-    client.loop.run_until_complete(main())
+    user_client.loop.run_until_complete(main())
