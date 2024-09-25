@@ -60,9 +60,8 @@ async def handler(event):
         return
 
     # Автоответчик
-    if not await client.is_user_authorized():
-        await event.respond("Вас приветствует Кристалл, за меня отвечает автоответчик. Если не отвечаю, значит занят/сплю/нахожусь в личной зоне. Просьба не спамить!")
-        print(f"Ответ пользователю {sender_id} отправлен.")
+    await event.respond("Вас приветствует Кристалл, за меня отвечает автоответчик. Если не отвечаю, значит занят/сплю/нахожусь в личной зоне. Просьба не спамить!")
+    print(f"Ответ пользователю {sender_id} отправлен.")
 
 # Запуск клиента
 async def main():
@@ -70,7 +69,5 @@ async def main():
     print("Бот запущен...")
     await client.run_until_disconnected()
 
-asyncio.run(main())    await client.run_until_disconnected()
-
-if __name__ == '__main__':
-    asyncio.run(main())
+# Запуск асинхронного кода
+asyncio.run(main())
