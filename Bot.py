@@ -26,15 +26,13 @@ async def handle_new_message(event):
 async def main():
     await client.start()
     print("Автоответчик запущен...")
-
+    
     # Держим клиент активным
     await client.run_until_disconnected()
 
 # Запуск основного метода
-with client:
-    client.loop.run_until_complete(main())             
-
-    await asyncio.gather(*tasks)
+if __name__ == "__main__":
+    asyncio.run(main())    await asyncio.gather(*tasks)
 
 # Запуск основного метода
 with client:
