@@ -1,6 +1,6 @@
 import time
-import random
 from telethon import TelegramClient
+from telethon.errors import ChatAdminRequiredError
 
 # Вставьте свои данные здесь
 api_id = 23169896  # Ваш API ID
@@ -11,31 +11,30 @@ phone_number = '+77766349341'  # Ваш номер телефона
 client = TelegramClient('auto_sender', api_id, api_hash)
 
 # Сообщение для рассылки
-message = "Сделаю вам авторассылку. За вас будет делать бот, чтоб не было бана, рассылка будет происходить около 5-15 минут по всем каналам, беседам, чатам. Цена 3$"
+message = "Сделаю вам авторассылку. За вас будет делать бот, чтоб не было бана, рассылка будет происходить около 10 минут по всем беседам и чатам. Цена 3$"
 
 async def send_message(chat):
-    await client.send_message(chat, message)
-    print(f"Сообщение отправлено в {chat.title} ({chat.id})")
+    try:
+        await client.send_message(chat, message)
+        print(f"Сообщение отправлено в беседу: {chat.title} ({chat.id})")
+    except ChatAdminRequiredError:
+        print(f"Нет прав администратора для отправки сообщения в беседу: {chat.title} ({chat.id}). Пропуск...")
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения в беседу: {chat.title} ({chat.id}): {e}")
 
 async def main():
     await client.start()
 
     # Получаем список всех чатов
     dialogs = await client.get_dialogs()
-    num_dialogs = len(dialogs)
-
-    if num_dialogs == 0:
-        print("Нет доступных чатов для рассылки.")
-        return
 
     for dialog in dialogs:
-        # Проверяем, является ли диалог группой или каналом
-        if dialog.is_group or dialog.is_channel:
-            # Отправляем сообщение в чат
+        # Проверяем, является ли диалог беседой или общим чатом
+        if dialog.is_group or dialog.is_channel:  # Проверяем на группы или каналы
             await send_message(dialog.entity)
 
-            # Ожидание 10 минут между отправками
-            wait_time = 600  # 600 секунд = 10 минут
+            # Ожидание 4 минуты между отправками
+            wait_time = 240  # 240 секунд = 4 минуты
             print(f"Ожидание {wait_time // 60} минут перед следующей отправкой...")
             time.sleep(wait_time)
 
