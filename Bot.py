@@ -13,66 +13,56 @@ your_id = 1694921116  # Твой ID
 # Создаем клиент Telethon
 client = TelegramClient('auto_responder', api_id, api_hash)
 
-# Параметры антиспама
-MESSAGE_LIMIT = 6  # Максимум сообщений
-TIME_WINDOW = 60  # Интервал в секундах для спама
-BLOCK_TIME = 1800  # Время блокировки пользователя (30 минут)
-
-# Словарь для отслеживания сообщений пользователей
-user_messages = {}
-blocked_users = {}
-
 # Переменные для активации автоответчика
-auto_responder_active = False
+auto_responder_private = False  # Для личных сообщений
+auto_responder_group = False  # Для групп
+last_group_message_time = {}  # Для отслеживания времени последнего сообщения в группах
 
-# Функция для активации автоответчика
-async def auto_responder(event):
-    global auto_responder_active
-    if auto_responder_active:
+# Функция для активации автоответчика в личных сообщениях
+async def auto_responder_private_chat(event):
+    if auto_responder_private and event.is_private:  # Проверяем, что это личный чат
         await event.reply("Вас приветствует Кристалл, за меня отвечает автоответчик. Если не отвечаю, значит занят/сплю/нахожусь в личной зоне. Просьба не спамить!")
 
-# Антиспам система
-async def check_spam(event):
-    user_id = event.sender_id
-    now = time.time()
-    
-    if user_id in blocked_users and now < blocked_users[user_id]:
-        return False  # Пользователь заблокирован
-    
-    if user_id not in user_messages:
-        user_messages[user_id] = []
-    
-    user_messages[user_id].append(now)
-    
-    # Удаляем старые сообщения
-    user_messages[user_id] = [t for t in user_messages[user_id] if now - t < TIME_WINDOW]
-    
-    if len(user_messages[user_id]) > MESSAGE_LIMIT:
-        blocked_users[user_id] = now + BLOCK_TIME
-        await event.reply("Вы заблокированы за спам.")
-        return False
-    
-    return True
+# Функция для активации автоответчика в группах
+async def auto_responder_group_chat(event):
+    global last_group_message_time
+    if auto_responder_group and event.is_group:  # Проверяем, что это группа
+        chat_id = event.chat_id
+        now = time.time()
+        
+        # Проверяем, прошло ли достаточно времени с последнего сообщения (120 секунд)
+        if chat_id not in last_group_message_time or now - last_group_message_time[chat_id] >= 120:
+            last_group_message_time[chat_id] = now  # Обновляем время последнего сообщения
+            await event.reply("Давно хотел себе автоответчика, пока ты не в сети? Но нет подписки на премиум? Не беда! Я помогу тебе создать автоответчика, который будет отвечать твоим клиентам или просто людям заготовленным текстом.\nЦена 3$")
+        else:
+            print(f"Сообщение пропущено для группы {chat_id}, так как прошло недостаточно времени с последнего сообщения.")
 
-# Обрабатываем сообщения
+# Обрабатываем команды
 @client.on(events.NewMessage)
 async def handler(event):
-    global auto_responder_active
-    
+    global auto_responder_private, auto_responder_group
+
     # Только ты можешь вводить команды
     if event.sender_id == your_id:
-        # Команда активации автоответчика
-        if event.text == '/chat':
-            auto_responder_active = True
+        # Команда активации автоответчика для личных сообщений
+        if event.text == '/chat' and event.is_private:
+            auto_responder_private = True
+            auto_responder_group = False  # Отключаем автоответчик для групп
             await event.reply("Автоответчик для личных чатов активирован!")
-        elif event.text == '/group':
-            await event.reply("Режим автоответчика для групп активирован!")
+        
+        # Команда активации автоответчика для групп
+        elif event.text == '/group' and event.is_group:
+            auto_responder_group = True
+            auto_responder_private = False  # Отключаем автоответчик для личных чатов
+            await event.reply("Автоответчик для групп активирован!")
         return
     
-    # Если автоответчик активирован, проверяем на спам
-    if auto_responder_active:
-        if await check_spam(event):
-            await auto_responder(event)
+    # Если автоответчик активен, запускаем его для личных чатов или групп
+    if auto_responder_private:
+        await auto_responder_private_chat(event)
+    
+    if auto_responder_group:
+        await auto_responder_group_chat(event)
 
 # Запуск клиента
 with client:
