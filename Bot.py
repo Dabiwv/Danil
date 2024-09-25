@@ -16,7 +16,7 @@ bot_client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
 async def send_report(username):
     try:
         user = await user_client.get_entity(username)  # Получаем пользователя по юзернейму
-        await user_client.report_user(user.id, 'spam')  # Используем report_user
+        await user_client(functions.contacts.ReportRequest(user.id, 'spam'))  # Отправляем жалобу
         print(f"Жалоба на пользователя {username} отправлена.")
     except Exception as e:
         print(f"Ошибка при отправке жалобы: {e}")
@@ -35,6 +35,15 @@ async def main():
     if not await user_client.is_user_authorized():
         phone_code = input('Введите код подтверждения, который пришел на ваш телефон: ')
         await user_client.sign_in(phone_number, phone_code)
+    
+    print("Авторизация пользователя прошла успешно!")
+    
+    # Ожидаем события от бота
+    await bot_client.run_until_disconnected()
+
+# Запускаем асинхронную функцию в основном блоке программы
+with user_client:
+    user_client.loop.run_until_complete(main())        await user_client.sign_in(phone_number, phone_code)
     
     print("Авторизация пользователя прошла успешно!")
     
