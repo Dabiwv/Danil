@@ -16,9 +16,12 @@ async def main():
 
     while True:
         try:
+            # Получаем entity для пользователя
+            user_entity = await client.get_input_entity(user_input)
+
             # Отправляем жалобу на пользователя
             await client(functions.messages.ReportRequest(
-                peer=await client.get_input_entity(user_input),  # Теперь user_input может быть ID или username
+                peer=user_entity,  # Теперь user_input может быть ID или username
                 id=[],  # Обычно можно оставить пустым для жалобы на весь чат
                 reason=types.InputReportReasonSpam(),  # Тип жалобы (в данном случае - спам)
                 message='Спам'  # Причина жалобы
