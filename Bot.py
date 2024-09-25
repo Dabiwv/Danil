@@ -32,7 +32,7 @@ async def main():
 
 # Запуск основного метода
 with client:
-    client.loop.run_until_complete(main())            print(f"Ошибка при получении чата по ссылке {link.strip()}: {e}")
+    client.loop.run_until_complete(main())             
 
     await asyncio.gather(*tasks)
 
