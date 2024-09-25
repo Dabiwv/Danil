@@ -11,7 +11,7 @@ phone_number = '+7 776 6349341'
 user_client = TelegramClient('user', api_id, api_hash)
 
 # Токен вашего бота
-bot_token = '7058388588:AAHWd-c2BEmG8penT2VXGxveMg-tftPeJWs'
+bot_token = '6423641572:AAFx8dMJaahZBOgm8GRItFhkRlB3_vMa3c0'
 bot_client = TelegramClient('bot', api_id, api_hash).start(bot_token=bot_token)
 
 async def send_report(user_id):
