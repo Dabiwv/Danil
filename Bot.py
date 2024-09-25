@@ -1,6 +1,7 @@
 import time
 import asyncio
 from telethon import TelegramClient
+from telethon.tl.types import PeerUser
 
 # Входные данные для вашего аккаунта
 api_id = '23169896'  # Замените на ваш API ID
@@ -12,7 +13,13 @@ client = TelegramClient('reporter', api_id, api_hash)
 
 async def send_report(user_id):
     try:
-        await client.report_user(user_id, 'spam')  # Отправка жалобы
+        # Получаем объект пользователя
+        user = await client.get_entity(user_id)
+        # Отправляем жалобу
+        await client(functions.contacts.ReportRequest(
+            peer=user,
+            reason='spam'
+        ))
         print(f"Жалоба на пользователя {user_id} отправлена.")
     except Exception as e:
         print(f"Ошибка при отправке жалобы: {e}")
