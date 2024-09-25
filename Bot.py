@@ -41,6 +41,13 @@ async def main():
     await bot_client.run_until_disconnected()
 
 with user_client:
+    user_client.loop.run_until_complete(main())        await user_client.sign_in(phone_number, phone_code)
+    
+    print("Авторизация пользователя прошла успешно!")
+    
+    await bot_client.run_until_disconnected()
+
+with user_client:
     user_client.loop.run_until_complete(main())        user_id = input("Введите ID пользователя для отправки жалобы: ")
         await send_report(user_id)
         await asyncio.sleep(5)  # Интервал между отправкой жалоб (5 секунд)
