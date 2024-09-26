@@ -1,6 +1,7 @@
 import time
 import asyncio
 from telethon import TelegramClient, events
+import logging
 
 # Входные данные для вашего аккаунта
 api_id = '23169896'
@@ -18,6 +19,13 @@ auto_responder_private = False  # Для личных сообщений
 auto_responder_group = False  # Для групп
 last_group_message_time = {}  # Для отслеживания времени последнего сообщения в группах
 
+# Логирование
+logging.basicConfig(filename='messages_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+
+# Функция для записи логов
+def log_message(event):
+    logging.info(f"Сообщение от {event.sender_id}: {event.text}")
+
 # Функция для активации автоответчика в личных сообщениях
 async def auto_responder_private_chat(event):
     if auto_responder_private and event.is_private:  # Проверяем, что это личный чат
@@ -33,7 +41,7 @@ async def auto_responder_group_chat(event):
         # Проверяем, прошло ли достаточно времени с последнего сообщения (120 секунд)
         if chat_id not in last_group_message_time or now - last_group_message_time[chat_id] >= 120:
             last_group_message_time[chat_id] = now  # Обновляем время последнего сообщения
-            await event.reply("Продам данный тг аккаунт, отлега более 4 лет, есть подписки на разные боты для деанона (3мес). Цена 3$")
+            await event.reply("Создам сайт,скрипты для ботов,флудилку. Цена за сайт 4$,цена за скрипты для вашего теллеграм бота зависит от ваших требований. Обо всем Про все писать в личку")
         else:
             print(f"Сообщение пропущено для группы {chat_id}, так как прошло недостаточно времени с последнего сообщения.")
 
@@ -42,6 +50,9 @@ async def auto_responder_group_chat(event):
 async def handler(event):
     global auto_responder_private, auto_responder_group
 
+    # Логирование каждого входящего сообщения
+    log_message(event)
+
     # Только ты можешь вводить команды
     if event.sender_id == your_id:
         # Команда активации автоответчика для личных сообщений
@@ -49,12 +60,26 @@ async def handler(event):
             auto_responder_private = True
             auto_responder_group = False  # Отключаем автоответчик для групп
             await event.reply("Автоответчик для личных чатов активирован!")
+            print("Автоответчик для личных сообщений включен.")
         
         # Команда активации автоответчика для групп
         elif event.text == '/group' and event.is_group:
             auto_responder_group = True
             auto_responder_private = False  # Отключаем автоответчик для личных чатов
             await event.reply("Автоответчик для групп активирован!")
+            print("Автоответчик для групп включен.")
+        
+        # Команда отключения автоответчика для личных сообщений
+        elif event.text == '/stop_chat' and event.is_private:
+            auto_responder_private = False
+            await event.reply("Автоответчик для личных сообщений отключен.")
+            print("Автоответчик для личных сообщений отключен.")
+        
+        # Команда отключения автоответчика для групп
+        elif event.text == '/stop_group' and event.is_group:
+            auto_responder_group = False
+            await event.reply("Автоответчик для групп отключен.")
+            print("Автоответчик для групп отключен.")
         return
     
     # Если автоответчик активен, запускаем его для личных чатов или групп
