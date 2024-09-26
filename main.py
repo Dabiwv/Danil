@@ -4,12 +4,12 @@ from telethon import TelegramClient, events
 import logging
 
 # Входные данные для вашего аккаунта
-api_id = '23169896'
-api_hash = 'c83d7ac378acfd5d69c2cf2e9b121e7f'
-phone_number = '+7 776 6349341'
+api_id = '17086106'
+api_hash = '1bb38ac13a669b310a3546f46e310459'
+phone_number = '+7 776 5139878'
 
 # Уникальный ID тебя (владельца)
-your_id = 1694921116  # Твой ID
+your_id =5117600561   # Твой ID
 
 # Создаем клиент Telethon
 client = TelegramClient('auto_responder', api_id, api_hash)
@@ -39,9 +39,11 @@ async def auto_responder_group_chat(event):
         now = time.time()
         
         # Проверяем, прошло ли достаточно времени с последнего сообщения (120 секунд)
-        if chat_id not in last_group_message_time or now - last_group_message_time[chat_id] >= 120:
+        if chat_id not in last_group_message_time or now - last_group_message_time[chat_id] >= 500:
             last_group_message_time[chat_id] = now  # Обновляем время последнего сообщения
-            await event.reply("Создам сайт,скрипты для ботов,флудилку. Цена за сайт 4$,цена за скрипты для вашего теллеграм бота зависит от ваших требований. Обо всем Про все писать в личку")
+            await event.reply("КУПЛЮ ММ2 ЗА ТЕНГЕ ОНЛИ МОЯ ДОВА ИЛИ ГАРАНТ
+
+ТАК ЖЕ ИЩУ ФР КОРОВУ ИЛИ ЧЕРЕПАХУ")
         else:
             print(f"Сообщение пропущено для группы {chat_id}, так как прошло недостаточно времени с последнего сообщения.")
 
